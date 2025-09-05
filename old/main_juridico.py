@@ -4,8 +4,7 @@ import subprocess
 import json
 import sqlite3
 import sys
-from pathlib import Path
-from playwright.sync_api import sync_playwright, TimeoutError
+from playwright.sync_api import sync_playwright, TimeoutError 
 from autologin import realizar_login_automatico
 
 # --- FUNÇÕES DE BANCO DE DADOS ---
@@ -21,13 +20,12 @@ def salvar_dados_inclusao_docs(dados, nome_banco="dados_inclusao_docs.db"):
         NPJ TEXT PRIMARY KEY, 
         Adverso_Principal TEXT, 
         Numero_de_rastreamento TEXT, 
-        Origem TEXT,
-        Qtd_Dias_Gerada TEXT
+        Origem TEXT
     )''')
     registros_inseridos = 0
     for item in dados:
-        cursor.execute('INSERT OR IGNORE INTO inclusao_documentos VALUES (?, ?, ?, ?, ?)', 
-                       (item.get('NPJ'), item.get('Adverso Principal'), item.get('Número de rastreamento'), item.get('Origem'), item.get('Qtd Dias Gerada')))
+        cursor.execute('INSERT OR IGNORE INTO inclusao_documentos VALUES (?, ?, ?, ?)', 
+                       (item.get('NPJ'), item.get('Adverso Principal'), item.get('Número de rastreamento'), item.get('Origem')))
         registros_inseridos += cursor.rowcount
     conn.commit()
     conn.close()
@@ -38,7 +36,7 @@ def salvar_dados_doc_externo(dados, nome_banco="dados_doc_externo.db"):
     if not dados: return
     conn = sqlite3.connect(nome_banco)
     cursor = conn.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS doc_externo (NPJ TEXT PRIMARY KEY, Adverso_Principal TEXT, Gerado_em TEXT)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS doc_externo (NPJ TEXT PRIMARY KEY, Adverso_Principal TEXT, Gerada_em TEXT)')
     registros_inseridos = 0
     for item in dados:
         cursor.execute('INSERT OR IGNORE INTO doc_externo VALUES (?, ?, ?)', (item.get('NPJ'), item.get('Adverso Principal'), item.get('Gerada em')))
@@ -52,7 +50,7 @@ def salvar_dados_andamento_publicacao(dados, nome_banco="dados_andamento_publica
     if not dados: return
     conn = sqlite3.connect(nome_banco)
     cursor = conn.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS andamento_publicacao (NPJ TEXT PRIMARY KEY, Adverso_Principal TEXT, Gerado_em TEXT)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS andamento_publicacao (NPJ TEXT PRIMARY KEY, Adverso_Principal TEXT, Gerada_em TEXT)')
     registros_inseridos = 0
     for item in dados:
         cursor.execute('INSERT OR IGNORE INTO andamento_publicacao VALUES (?, ?, ?)', (item.get('NPJ'), item.get('Adverso Principal'), item.get('Gerada em')))
@@ -60,21 +58,6 @@ def salvar_dados_andamento_publicacao(dados, nome_banco="dados_andamento_publica
     conn.commit()
     conn.close()
     print(f"\n✅ {registros_inseridos} novos registros de Andamento de Publicação salvos em '{nome_banco}'.")
-
-def salvar_dados_pendencias(dados, nome_banco="dados_pendencias.db"):
-    """Salva os dados de 'Pedido Pendente de Finalização' em um banco SQLite."""
-    if not dados: return
-    conn = sqlite3.connect(nome_banco)
-    cursor = conn.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS pendencias (NPJ TEXT PRIMARY KEY, Adverso_Principal TEXT, Gerado_em TEXT)')
-    registros_inseridos = 0
-    for item in dados:
-        cursor.execute('INSERT OR IGNORE INTO pendencias VALUES (?, ?, ?)', (item.get('NPJ'), item.get('Adverso Principal'), item.get('Gerada em')))
-        registros_inseridos += cursor.rowcount
-    conn.commit()
-    conn.close()
-    print(f"\n✅ {registros_inseridos} novos registros de Pendências salvos em '{nome_banco}'.")
-
 
 # --- FUNÇÃO DE EXTRAÇÃO GENÉRICA ---
 
@@ -101,14 +84,14 @@ def extrair_dados_com_paginacao(page, id_tabela, colunas_desejadas, limite_regis
         corpo_da_tabela.wait_for(state="visible")
         
         for linha in corpo_da_tabela.locator("tr").all():
-            if len(dados_extraidos) >= limite_registros:
-                print(f"    - Limite de {limite_registros} registros atingido. Encerrando extração.")
-                return dados_extraidos
-                
             item = {}
             for nome_coluna, indice in indices_colunas.items():
                 item[nome_coluna] = linha.locator("td").nth(indice).inner_text().strip()
             dados_extraidos.append(item)
+            
+            if len(dados_extraidos) >= limite_registros:
+                print(f"    - Limite de {limite_registros} registros atingido. Encerrando extração.")
+                return dados_extraidos
 
         print(f"    - {len(dados_extraidos)} de {limite_registros} registros extraídos.")
 
@@ -119,12 +102,7 @@ def extrair_dados_com_paginacao(page, id_tabela, colunas_desejadas, limite_regis
 
         botao_proxima = paginador.locator('td.rich-datascr-button[onclick*="fastforward"]')
         
-        if botao_proxima.count() == 0:
-            print("\n--- Fim da extração. Botão 'próxima página' não encontrado. ---")
-            break
-
-        classe_do_botao = botao_proxima.get_attribute("class") or ""
-        if "dsbld" in classe_do_botao:
+        if not botao_proxima.is_visible() or "dsbld" in (botao_proxima.get_attribute("class") or ""):
             print("\n--- Fim da paginação. Última página alcançada. ---")
             break
         
@@ -141,9 +119,6 @@ def ler_npjs_para_pesquisa(nome_banco="dados_inclusao_docs.db"):
     """Lê todos os NPJs do banco de dados especificado e retorna uma lista."""
     print(f"\nLendo NPJs do banco de dados '{nome_banco}'...")
     try:
-        if not Path(nome_banco).exists():
-            print(f"    - Arquivo de banco de dados '{nome_banco}' não encontrado.")
-            return []
         conn = sqlite3.connect(nome_banco)
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='inclusao_documentos'")
@@ -161,7 +136,7 @@ def ler_npjs_para_pesquisa(nome_banco="dados_inclusao_docs.db"):
         return []
 
 def pesquisar_processos_v2(page, lista_de_npjs):
-    """Navega diretamente para a URL de consulta de cada NPJ e detalha o resultado."""
+    """Navega diretamente para a URL de consulta de cada NPJ da lista."""
     print("\nIniciando módulo de pesquisa de processos (método URL direta)...")
     
     url_base = "https://juridico.bb.com.br/paj/juridico/v2?app=processoConsultaRapidoApp"
@@ -170,37 +145,21 @@ def pesquisar_processos_v2(page, lista_de_npjs):
         try:
             print(f"    - Pesquisando NPJ: {npj}")
             
+            # Quebra o NPJ no formato "ANO/NUMERO-VARIACAO"
             ano, resto = npj.split('/')
             numero, variacao = resto.split('-')
 
+            # Constrói a URL final com os parâmetros
             url_pesquisa_direta = f"{url_base}&anoProcesso={ano}&numeroProcesso={numero}&variacaoProcesso={variacao}"
             
             print(f"    - Navegando para: {url_pesquisa_direta}")
             page.goto(url_pesquisa_direta)
 
-            # ETAPA DE DETALHAMENTO (COM ESPERA INTELIGENTE E ESCOPO)
-            print("\n    - Aguardando container de resultados da pesquisa...")
-            
-            # 1. Espera pelo container que envolve a tabela de resultados.
-            container_resultados = page.locator('div[ng-if="vm.mostraTabela"]')
-            container_resultados.wait_for(state="visible", timeout=15000)
-            print("    - Container de resultados encontrado.")
-
-            # 2. DENTRO do container, localiza a linha que contém o NPJ pesquisado.
-            linha_resultado = container_resultados.locator(f"tr:has-text('{npj}')")
-            linha_resultado.wait_for(state="visible", timeout=10000)
-            print("    - Linha do resultado encontrada.")
-
-            # 3. DENTRO da linha, procura o botão de detalhar e clica.
-            botao_detalhar = linha_resultado.locator('span[bb-tooltip="Detalhar"]')
-            print("    - Botão 'Detalhar' encontrado na linha correta.")
-            botao_detalhar.click()
-            
-            print("    - Clicando para ver os detalhes do processo...")
+            # Espera a página de resultados carregar
             page.wait_for_load_state("networkidle", timeout=30000)
-            print("    - Página de detalhamento final carregada com sucesso.")
+            print("    - Página de resultados do processo carregada com sucesso.")
             
-            time.sleep(3)
+            time.sleep(3) # Pausa para observar o resultado
 
         except Exception as e:
             print(f"    - ERRO ao pesquisar o NPJ {npj}: {e}")
@@ -236,31 +195,11 @@ def main():
                 {
                     "nome": "Inclusão de Documentos no NPJ",
                     "id_tabela": "notificacoesNaoLidasForm:notificacoesNaoLidasDetalhamentoForm:dataTabletableNotificacoesNaoLidas",
-                    "colunas": ["NPJ", "Adverso Principal", "Número de rastreamento", "Origem", "Qtd Dias Gerada"],
+                    "colunas": ["NPJ", "Adverso Principal", "Número de rastreamento", "Origem"],
                     "funcao_salvar": salvar_dados_inclusao_docs,
                     "tipo_contagem": "notificacao"
                 },
-                {
-                    "nome": "Doc. anexado por empresa externa em processo terceirizado",
-                    "id_tabela": "notificacoesNaoLidasForm:notificacoesNaoLidasDetalhamentoForm:dataTabletableNotificacoesNaoLidas",
-                    "colunas": ["NPJ", "Adverso Principal", "Gerada em"],
-                    "funcao_salvar": salvar_dados_doc_externo,
-                    "tipo_contagem": "notificacao"
-                },
-                {
-                    "nome": "Andamento de publicação em processo de condução terceirizada",
-                    "id_tabela": "notificacoesNaoLidasForm:notificacoesNaoLidasDetalhamentoForm:dataTabletableNotificacoesNaoLidas",
-                    "colunas": ["NPJ", "Adverso Principal", "Gerada em"],
-                    "funcao_salvar": salvar_dados_andamento_publicacao,
-                    "tipo_contagem": "notificacao"
-                },
-                {
-                    "nome": "Pedido Pendente de Finalização",
-                    "id_tabela": "notificacoesNaoLidasForm:pendenciasForm:dataTabletablePendencias",
-                    "colunas": ["NPJ", "Adverso Principal", "Gerado em"],
-                    "funcao_salvar": salvar_dados_pendencias,
-                    "tipo_contagem": "pendencia"
-                },
+                # ... outras tarefas podem ser adicionadas aqui ...
             ]
 
             for tarefa in TAREFAS:
@@ -274,17 +213,14 @@ def main():
                     
                     try:
                         contagem_numero = int(contagem_texto)
-                    except (ValueError, TypeError):
+                    except ValueError:
                         contagem_numero = 0
-                    
-                    print(f"    - Quantidade de itens encontrados: {contagem_numero}")
 
                     if contagem_numero > 0:
-                        print(f"    - Itens encontrados. Clicando para detalhar...")
+                        print(f"    - {contagem_numero} itens encontrados. Detalhando...")
                         botao_detalhar = linha_alvo.get_by_title("Detalhar notificações e pendências do subtipo")
                         botao_detalhar.click()
                         page.wait_for_load_state("networkidle", timeout=30000)
-                        print("✔️  DETALHAMENTO REALIZADO COM SUCESSO!")
 
                         dados_da_tarefa = extrair_dados_com_paginacao(page, tarefa["id_tabela"], tarefa["colunas"], limite_registros=contagem_numero)
                         
@@ -295,16 +231,18 @@ def main():
                         page.goto(url_lista_tarefas)
                         page.wait_for_load_state("networkidle", timeout=30000)
                     else:
-                        print(f"    - Nenhum item para processar. Pulando tarefa.")
+                        print(f"    - Nenhum item para processar. Pulando.")
                 else:
-                    print(f"    - Tipo de notificação não encontrado. Pulando tarefa.")
+                    print(f"    - Tipo de notificação não encontrado. Pulando.")
             
             # ETAPA 6: CHAMAR O MÓDULO DE PESQUISA
             print("\n✅ Extrações finalizadas. Iniciando módulo de pesquisa de NPJs.")
             
             npjs_para_pesquisar = ler_npjs_para_pesquisa()
             if npjs_para_pesquisar:
-                pesquisar_processos_v2(page, [npjs_para_pesquisar[0]]) # Pesquisando apenas o primeiro para teste
+                # Passamos a 'page' já logada para a função de pesquisa
+                # Para testar, pesquisamos apenas o primeiro NPJ da lista
+                pesquisar_processos_v2(page, [npjs_para_pesquisar[0]])
             else:
                 print("    - Nenhum NPJ encontrado para pesquisar.")
 
@@ -318,7 +256,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-

@@ -1,0 +1,7 @@
+Inclusão de Documentos no NPJ
+Doc. anexado por empresa externa em processo terceirizado
+Andamento de publicação em processo de condução terceirizada
+
+C:/notifica/.venv/Scripts/activate.bat
+^
+| CMD

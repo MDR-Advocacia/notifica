@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualizando {{ db_name }}</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
+        h1, h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 2em; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .texto-longo { max-height: 150px; overflow-y: auto; display: block; white-space: pre-wrap; background-color: #e9ecef; padding: 8px; border-radius: 4px; font-family: monospace; }
+        
+        /* Estilos para a nova coluna de arquivos */
+        .file-list ul { list-style-type: none; padding-left: 0; margin: 0; }
+        .file-list li { font-size: 0.9em; margin-bottom: 4px; white-space: nowrap; }
+        .file-list a { margin-left: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Visualizando: <strong>{{ db_name }}</strong></h1>
+    <p><a href="{{ url_for('index') }}">&larr; Voltar para a lista de bancos</a></p>
+
+    {% for table in tables_data %}
+        <h2>Tabela: {{ table.name }}</h2>
+        {% if table.rows %}
+            <table>
+                <thead>
+                    <tr>
+                        {# Cria os cabeçalhos das colunas existentes #}
+                        {% for header in table.headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                        {# ADICIONA O CABEÇALHO DA NOVA COLUNA #}
+                        <th>Arquivos Baixados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table.rows %}
+                        <tr>
+                            {# Cria as células com os dados do banco #}
+                            {% for header in table.headers %}
+                                <td>
+                                    {% set cell = row[header] %}
+                                    {% if cell and cell|length > 200 %}
+                                        <div class="texto-longo">{{ cell }}</div>
+                                    {% else %}
+                                        {{ cell }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+
+                            {# ADICIONA A NOVA CÉLULA NO FINAL DA LINHA PARA OS ARQUIVOS #}
+                            <td>
+                                {% if row.files %}
+                                    <div class="file-list">
+                                        <ul>
+                                        {% for file in row.files %}
+                                            <li>
+                                                {{ file }}
+                                                <a href="{{ url_for('download_file', subpath=row.sanitized_npj + '/' + file) }}" title="Baixar {{ file }}">(Baixar)</a>
+                                            </li>
+                                        {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>A tabela está vazia.</p>
+        {% endif %}
+    {% endfor %}
+</body>
+</html>

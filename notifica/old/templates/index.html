@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualizador de Bancos de Dados</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; }
+        h1 { color: #333; }
+        ul { list-style-type: none; padding: 0; }
+        li { background-color: white; margin: 0.5em 0; padding: 1em; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        a { text-decoration: none; color: #007bff; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Visualizador de Bancos de Dados do RPA</h1>
+    <h3>Bancos de dados encontrados:</h3>
+    <ul>
+        {% for db in databases %}
+            <li><a href="{{ url_for('view_database', db_name=db) }}">{{ db }}</a></li>
+        {% else %}
+            <li>Nenhum banco de dados (.db) encontrado neste diretório.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

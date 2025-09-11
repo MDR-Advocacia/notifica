@@ -1,4 +1,6 @@
 # arquivo: main.py
+import sys
+import traceback
 from playwright.sync_api import sync_playwright
 import time
 from datetime import datetime
@@ -24,6 +26,8 @@ def main():
 
     browser = None
     browser_process = None
+    # O bloco 'with' já garante que o playwright será fechado.
+    # O 'try/except/finally' interno trata erros durante a execução da automação.
     with sync_playwright() as playwright:
         try:
             browser, context, browser_process = realizar_login_automatico(playwright)
@@ -50,6 +54,8 @@ def main():
         except Exception as e:
             print(f"\n❌ Ocorreu uma falha crítica na automação: {e}")
             stats_processamento["falha"] = "Crítico"
+            # Re-lança a exceção para que ela seja capturada pelo bloco principal e encerre o script com erro.
+            raise
         finally:
             end_time = time.time()
             duracao_total = end_time - start_time
@@ -60,8 +66,8 @@ def main():
 
             log_data = {
                 "timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                "duracao_total": formatar_duracao(duracao_total),
-                "tempo_medio_npj": formatar_duracao(tempo_medio),
+                "duracao_total": duracao_total, # Salva o valor numérico para o dashboard
+                "tempo_medio_npj": tempo_medio,
                 "notificacoes_salvas": stats_extracao.get("notificacoes", 0),
                 "andamentos_capturados": stats_processamento.get("andamentos", 0),
                 "documentos_baixados": stats_processamento.get("documentos", 0),
@@ -77,8 +83,8 @@ def main():
 ============================================================
 📊 RESUMO DA EXECUÇÃO DA RPA ({log_data['timestamp']})
 ============================================================
-- Tempo Total de Execução: {log_data['duracao_total']}
-- Média por NPJ Processado: {log_data['tempo_medio_npj']}
+- Tempo Total de Execução: {formatar_duracao(log_data['duracao_total'])}
+- Média por NPJ Processado: {formatar_duracao(log_data['tempo_medio_npj'])}
 
 - Notificações Novas Salvas: {log_data['notificacoes_salvas']}
 - Andamentos Capturados: {log_data['andamentos_capturados']}
@@ -90,12 +96,26 @@ def main():
 """
             print(resumo)
 
-            if 'browser' in locals() and browser.is_connected():
-                input("\n... Pressione Enter para fechar o navegador e encerrar a RPA ...")
+            # --- LÓGICA DE ENCERRAMENTO CONDICIONAL ---
+            # Verifica se o script está rodando em modo manual (ou seja, sem o argumento '--automated')
+            is_manual_run = '--automated' not in sys.argv
+
+            if 'browser' in locals() and browser and browser.is_connected():
+                if is_manual_run:
+                    input("\n... Pressione Enter para fechar o navegador e encerrar a RPA ...")
                 browser.close()
             elif browser_process:
                 browser_process.kill()
 
+# Bloco de execução principal
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        # Se main() terminar sem erros, o script sairá com código 0 (sucesso) por padrão.
+    except Exception as e:
+        # Se uma exceção não tratada escapar de main(), ela será capturada aqui.
+        print("\n!!! OCORREU UM ERRO CRITICO FINAL NA EXECUCAO DA RPA !!!")
+        # O traceback já foi impresso dentro da função 'main' se o erro foi lá.
+        # Aqui, apenas garantimos que o script termine com um código de erro.
+        sys.exit(1)
 

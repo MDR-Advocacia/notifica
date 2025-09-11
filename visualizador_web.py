@@ -1,239 +1,91 @@
-# arquivo: visualizador_web.py
 import sqlite3
 import json
 import os
-import math
-from flask import Flask, render_template_string, send_from_directory, request, redirect, url_for
 import webbrowser
 from threading import Timer
-import database
+from flask import Flask, render_template_string, send_from_directory, request, redirect, url_for
 
 # --- CONFIGURAÇÃO ---
-ITENS_POR_PAGINA = 10
+ITENS_POR_PAGINA = 15
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'rpa.db')
 DOWNLOADS_DIR = os.path.join(BASE_DIR, 'downloads')
+LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAACuCAYAAAB8CV3AAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAARTSURBVHhe7d3/S9t3fcfx9Z0aUhAFRRBFEAQV0V1RFF0UWVhcLItcFtdFtry2/gJbLHuLrbHWv6DD+gt0XRRdlF21KIti14WLolB0UVDU4eD/4PzT5A0kpLkk581534/n45LzfvD53u+53A/JvU/IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-!"
 
 app = Flask(__name__)
 
-# --- TEMPLATE HTML EMBUTIDO ---
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Execução - RPA</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 2em; }
-        .container { max-width: 1800px; margin: auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        h1 { color: #1a2b4d; padding-bottom: 10px; }
-        .tabs { border-bottom: 2px solid #dee2e6; margin-bottom: 20px; }
-        .tab-button { background: none; border: none; padding: 15px 25px; font-size: 1.1em; cursor: pointer; transition: color 0.2s, border-bottom 0.2s; color: #6c757d; border-bottom: 3px solid transparent; }
-        .tab-button.active { color: #007bff; border-bottom: 3px solid #007bff; font-weight: 600; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; table-layout: fixed; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; word-break: break-word; vertical-align: top; }
-        th { background-color: #f8f9fa; font-weight: 600; }
-        tr:hover { background-color: #f5f5f5; }
-        
-        .status-icon { height: 15px; width: 15px; border-radius: 50%; display: inline-block; vertical-align: middle; }
-        .status-Pendente { background-color: #5cb85c; }
-        .status-Processado { background-color: #5cb85c; }
-        .status-Processado-em-Teste { background-color: #5bc0de; }
-        .status-Arquivado { background-color: #6c757d; }
-        .status-Erro { background-color: #d9534f; }
-        
-        .no-data { text-align: center; padding: 20px; color: #888; font-size: 1.1em; }
-        .data-list { margin: 0; padding: 0; list-style: none; }
-        .data-item details { margin-bottom: 5px; }
-        .data-item summary { cursor: pointer; padding: 8px 12px; background-color: #e9ecef; border-radius: 4px; font-weight: 500; transition: background-color 0.2s; display: block; }
-        .data-item summary:hover { background-color: #dee2e6; }
-        .publication-text { border: 1px solid #eee; padding: 10px; margin-top: -1px; border-radius: 0 0 4px 4px; background-color: #fdfdfd; white-space: pre-wrap; font-family: "Courier New", Courier, monospace; font-size: 0.95em; max-height: 300px; overflow-y: auto; }
-        .document-item, .andamento-item { padding: 8px 12px; background-color: #f8f9fa; border-radius: 4px; margin-bottom: 5px; }
-        .document-item a { color: #0056b3; text-decoration: none; font-weight: 500; }
-        .document-item a:hover { text-decoration: underline; }
-        .no-data-cell { color: #888; font-style: italic; font-size: 0.9em; padding-top: 5px; }
-        .filter-section { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; }
-        .filter-group { display: flex; flex-direction: column; }
-        .filter-group label { margin-bottom: 5px; font-weight: 500; color: #555; }
-        .filter-group select, .filter-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        .filter-button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer; align-self: flex-end; }
-        .pagination { margin-top: 20px; text-align: center; }
-        .pagination a { color: #007bff; padding: 8px 12px; text-decoration: none; border: 1px solid #ddd; margin: 0 2px; border-radius: 4px; }
-        .pagination a.active { background-color: #007bff; color: white; border-color: #007bff; }
-        .pagination a:hover:not(.active) { background-color: #f0f0f0; }
-        .action-button { background: none; border: 1px solid #6c757d; color: #6c757d; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
-        .unarchive-button { border-color: #28a745; color: #28a745; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Dashboard de Execução da RPA</h1>
-        
-        <div class="tabs">
-            <button class="tab-button active" onclick="openTab(event, 'Dashboard')">Dashboard</button>
-            <button class="tab-button" onclick="openTab(event, 'Logs')">Logs de Execução</button>
-        </div>
+# --- FUNÇÕES AUXILIARES ---
+def formatar_duracao(segundos):
+    """Formata segundos em uma string legível (minutos e segundos)."""
+    try:
+        # Garante que segundos seja um número
+        segundos = float(segundos)
+    except (ValueError, TypeError):
+        return "0 segundos"
 
-        <div id="Dashboard" class="tab-content active">
-            <section class="filter-section">
-                <form method="get" style="display: contents;">
-                    <div class="filter-group">
-                        <label for="status-filter">Filtrar por Status</label>
-                        <select id="status-filter" name="status">
-                            <option value="">Todos</option>
-                            <option value="Pendente" {% if filtros.status == 'Pendente' %}selected{% endif %}>Novo</option>
-                            <option value="Processado" {% if filtros.status == 'Processado' %}selected{% endif %}>Processado</option>
-                            <option value="Processado em Teste" {% if filtros.status == 'Processado em Teste' %}selected{% endif %}>Obtido em Teste</option>
-                            <option value="Arquivado" {% if filtros.status == 'Arquivado' %}selected{% endif %}>Arquivado</option>
-                            <option value="Erro" {% if filtros.status == 'Erro' %}selected{% endif %}>Erro</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="tipo-filter">Filtrar por Tipo</label>
-                        <select id="tipo-filter" name="tipo_notificacao">
-                            <option value="">Todos</option>
-                            {% for tipo in tipos_notificacao %}
-                            <option value="{{ tipo }}" {% if filtros.tipo_notificacao == tipo %}selected{% endif %}>{{ tipo }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                     <div class="filter-group">
-                        <label for="ordenar-filter">Ordenar por</label>
-                        <select name="ordenar_por">
-                            <option value="data_criacao" {% if filtros.ordenar_por == 'data_criacao' %}selected{% endif %}>Data (Mais Recente)</option>
-                            <option value="status" {% if filtros.ordenar_por == 'status' %}selected{% endif %}>Status</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="filter-button">Filtrar</button>
-                </form>
-            </section>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">Status</th>
-                        <th style="width: 10%;">NPJ</th>
-                        <th style="width: 15%;">Adverso Principal</th>
-                        <th style="width: 15%;">Tipo Notificação</th>
-                        <th style="width: 8%;">Data Notificação</th>
-                        <th style="width: 20%;">Andamentos</th>
-                        <th style="width: 20%;">Documentos</th>
-                        <th style="width: 7%;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reg in registros %}
-                    <tr>
-                        <td>
-                            <span class="status-icon status-{{ reg.status.replace(' ', '-') }}" title="{{ status_map.get(reg.status, reg.status) }}"></span>
-                        </td>
-                        <td>{{ reg.NPJ }}</td>
-                        <td>{{ reg.adverso_principal if reg.adverso_principal else '<span class="no-data-cell">Falha na captura</span>'|safe }}</td>
-                        <td>{{ reg.tipo_notificacao }}</td>
-                        <td>{{ reg.data_notificacao }}</td>
-                        <td>
-                            {% if reg.andamentos %}
-                                <ul class="data-list">
-                                {% for andamento in reg.andamentos %}
-                                    <li class="data-item">
-                                        {% if andamento.texto %}
-                                        <details><summary><b>{{ andamento.data }}</b> - {{ andamento.tipo }}</summary><div class="publication-text">{{ andamento.texto }}</div></details>
-                                        {% else %}
-                                        <div class="andamento-item"><b>{{ andamento.data }}</b> - {{ andamento.tipo }}</div>
-                                        {% endif %}
-                                    </li>
-                                {% endfor %}
-                                </ul>
-                            {% elif reg.status != 'Pendente' %}
-                                <div class="no-data-cell">Nenhum andamento encontrado.</div>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td>
-                            {% if reg.documentos %}
-                                <ul class="data-list">
-                                {% for doc in reg.documentos %}
-                                    <li class="document-item">
-                                       <b>{{ doc.data }}</b> - <a href="/downloads/{{ doc.caminho_relativo }}" download>{{ doc.nome_arquivo }}</a>
-                                    </li>
-                                {% endfor %}
-                                </ul>
-                            {% elif reg.status != 'Pendente' %}
-                                <div class="no-data-cell">Nenhum documento encontrado.</div>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td>
-                            {% if reg.status in ['Processado', 'Processado em Teste'] %}
-                            <form action="{{ url_for('arquivar', item_id=reg.id) }}" method="post" style="margin:0;">
-                                <button type="submit" class="action-button">Arquivar</button>
-                            </form>
-                            {% elif reg.status == 'Arquivado' %}
-                            <form action="{{ url_for('desarquivar', item_id=reg.id) }}" method="post" style="margin:0;">
-                                <button type="submit" class="action-button unarchive-button">Desarquivar</button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            
-            <div class="pagination">
-                {% if paginas > 1 %}
-                    {% for p in range(1, paginas + 1) %}
-                        <a href="{{ url_for('index', page=p, **filtros) }}" class="{{ 'active' if p == pagina_atual else '' }}">{{ p }}</a>
-                    {% endfor %}
-                {% endif %}
-            </div>
+    if segundos < 0: return "0 segundos"
+    if segundos < 60:
+        return f"{segundos:.1f} segundos"
+    minutos, seg = divmod(segundos, 60)
+    return f"{int(minutos)} minuto(s) e {int(seg)} segundo(s)"
 
-        </div>
+def get_db_connection():
+    """Cria e retorna uma conexão com o banco de dados."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-        <div id="Logs" class="tab-content">
-             <table>
-                <thead>
-                    <tr>
-                        <th>Data e Hora</th><th>Duração Total</th><th>Média por NPJ</th><th>Notificações</th>
-                        <th>Andamentos</th><th>Documentos</th><th>Sucesso</th><th>Falha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>{{ log.timestamp }}</td><td>{{ log.duracao_total }}</td><td>{{ log.tempo_medio_npj }}</td>
-                        <td>{{ log.notificacoes_salvas }}</td><td>{{ log.andamentos_capturados }}</td>
-                        <td>{{ log.documentos_baixados }}</td><td>{{ log.npjs_sucesso }}</td><td>{{ log.npjs_falha }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+def init_db():
+    """Cria e atualiza as tabelas do banco de dados se necessário."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 1. Cria a tabela de notificações se ela não existir.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS notificacoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        NPJ TEXT,
+        tipo_notificacao TEXT,
+        adverso_principal TEXT,
+        data_notificacao TEXT,
+        data_criacao TEXT,
+        status TEXT DEFAULT 'Pendente',
+        andamentos TEXT,
+        documentos TEXT
+    );
+    """)
 
-    <script>
-        function openTab(evt, tabName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("tab-content");
-            for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; }
-            tablinks = document.getElementsByClassName("tab-button");
-            for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", "");}
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
-        }
-        document.addEventListener("DOMContentLoaded", function() {
-            const activeTab = new URLSearchParams(window.location.search).get('tab') || 'Dashboard';
-            document.querySelector(`.tab-button[onclick*="'${activeTab}'"]`).click();
-        });
-    </script>
-</body>
-</html>
-"""
+    # 2. LÓGICA DE MIGRAÇÃO: Verifica e adiciona a coluna 'data_criacao'
+    cursor.execute("PRAGMA table_info(notificacoes)")
+    columns = [row[1] for row in cursor.fetchall()]
+    
+    if 'data_criacao' not in columns:
+        print("INFO: Atualizando o esquema do banco de dados... Adicionando a coluna 'data_criacao'.")
+        cursor.execute("ALTER TABLE notificacoes ADD COLUMN data_criacao TEXT")
+        conn.commit()
+
+    # 3. Cria a tabela de logs se ela não existir.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS logs_execucao (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        duracao_total REAL,
+        tempo_medio_npj REAL,
+        notificacoes_salvas INTEGER,
+        andamentos_capturados INTEGER,
+        documentos_baixados INTEGER,
+        npjs_sucesso INTEGER,
+        npjs_falha INTEGER
+    );
+    """)
+    
+    conn.commit()
+    conn.close()
 
 def get_db_table_data(table_name):
-    # ... (código existente sem alterações)
+    """Busca todos os dados de uma tabela específica."""
     try:
-        conn = sqlite3.connect(database.DB_NOME)
-        conn.row_factory = sqlite3.Row
+        conn = get_db_connection()
         cursor = conn.cursor()
         query = f"SELECT * FROM {table_name} ORDER BY id DESC"
         cursor.execute(query)
@@ -246,80 +98,309 @@ def get_db_table_data(table_name):
         if 'conn' in locals() and conn:
             conn.close()
 
+# --- TEMPLATE HTML EMBUTIDO ---
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneNotify - Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e; --primary-color: #16213e; --secondary-color: #0f3460;
+            --accent-color: #e94560; --text-color: #dcdcdc; --header-color: #ffffff;
+            --border-color: #2a2a4a; --hover-color: #2d2d5a; --tab-inactive: #a0a0c0;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 2em; }
+        .container { max-width: 1800px; margin: auto; background: var(--primary-color); padding: 2em; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1.5em; }
+        .logo-container { display: flex; align-items: center; gap: 15px; }
+        .logo { height: 50px; }
+        h1 { color: var(--header-color); font-size: 2.2em; margin: 0; font-weight: 600; }
+        
+        .tabs { border-bottom: 2px solid var(--border-color); margin-bottom: 1.5em; }
+        .tab-button { background: none; border: none; padding: 15px 25px; font-size: 1.1em; cursor: pointer; transition: color 0.2s, border-bottom 0.2s; color: var(--tab-inactive); border-bottom: 3px solid transparent; }
+        .tab-button.active { color: var(--accent-color); border-bottom-color: var(--accent-color); font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .filter-section, .log-section { background-color: var(--secondary-color); padding: 1.5em; border-radius: 8px; margin-bottom: 20px; }
+        .filter-section { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .filter-group label { margin-bottom: 8px; font-weight: 500; color: var(--text-color); }
+        select { padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--primary-color); color: var(--text-color); font-size: 1em; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); word-break: break-word; vertical-align: middle; }
+        th { background-color: var(--secondary-color); font-weight: 600; color: var(--header-color); }
+        tr:hover { background-color: var(--hover-color); }
+        
+        .status { padding: 5px 10px; border-radius: 15px; color: #fff; font-weight: 500; text-align: center; display: inline-block; min-width: 80px; }
+        .status-Pendente { background-color: #28a745; }
+        .status-Processado, .status-Processado-em-Teste { background-color: #007bff; }
+        .status-Arquivado { background-color: #6c757d; }
+        .status-Erro { background-color: #dc3545; }
+        
+        .action-button { background: none; border: 1px solid #6c757d; color: #6c757d; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; }
+        .action-button:hover { background-color: #6c757d; color: #fff; }
+        
+        .pagination { margin-top: 20px; text-align: center; }
+        .pagination a { color: var(--accent-color); padding: 8px 14px; text-decoration: none; border: 1px solid var(--border-color); margin: 0 4px; border-radius: 4px; transition: all 0.2s; }
+        .pagination a.active, .pagination a:hover:not(.active) { background-color: var(--accent-color); color: white; border-color: var(--accent-color); }
+
+        .log-section { margin-top: 30px; }
+        h2 { color: var(--header-color); margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .log-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .info-item { background-color: var(--primary-color); padding: 15px; border-radius: 6px; }
+        .info-item .label { display: block; font-size: 0.9em; color: var(--tab-inactive); margin-bottom: 5px; }
+        .info-item .value { font-size: 1.2em; font-weight: 600; color: var(--header-color); }
+        
+        details summary { cursor: pointer; font-weight: 500; padding: 5px; border-radius: 4px; }
+        details summary:hover { background-color: var(--hover-color); }
+        .publication-text { white-space: pre-wrap; background-color: #111; padding: 10px; margin-top: 5px; border-radius: 4px; font-family: monospace; max-height: 250px; overflow-y: auto; }
+        a { color: #8ab4f8; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <img src="{{ logo }}" alt="Logo OneNotify" class="logo">
+                <h1>OneNotify</h1>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'Dashboard')">Dashboard Principal</button>
+            <button class="tab-button" onclick="openTab(event, 'Logs')">Histórico de Execuções</button>
+        </div>
+
+        <div id="Dashboard" class="tab-content active">
+            <section class="filter-section">
+                <!-- Filtros -->
+                <form method="get" style="display: contents;">
+                    <div class="filter-group">
+                        <label for="status-filter">Status</label>
+                        <select id="status-filter" name="status" onchange="this.form.submit()">
+                            <option value="">Todos</option>
+                            <option value="Pendente" {% if filtros.status == 'Pendente' %}selected{% endif %}>Novo</option>
+                            <option value="Processado" {% if filtros.status == 'Processado' %}selected{% endif %}>Processado</option>
+                            <option value="Arquivado" {% if filtros.status == 'Arquivado' %}selected{% endif %}>Arquivado</option>
+                            <option value="Erro" {% if filtros.status == 'Erro' %}selected{% endif %}>Erro</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="tipo-filter">Tipo</label>
+                        <select id="tipo-filter" name="tipo_notificacao" onchange="this.form.submit()">
+                            <option value="">Todos</option>
+                            {% for tipo in tipos_notificacao %}<option value="{{ tipo }}" {% if filtros.tipo_notificacao == tipo %}selected{% endif %}>{{ tipo }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </section>
+            
+            <!-- Tabela Principal -->
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">NPJ</th> <th style="width: 15%;">Tipo</th> <th style="width: 10%;">Data</th>
+                        <th style="width: 10%;">Status</th> <th style="width: 23%;">Andamentos</th> <th style="width: 23%;">Documentos</th>
+                        <th style="width: 7%;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registros %}
+                    <tr>
+                        <td>{{ reg.NPJ }}</td> <td>{{ reg.tipo_notificacao }}</td> <td>{{ reg.data_notificacao }}</td>
+                        <td><span class="status status-{{ reg.status.replace(' ', '-') }}">{{ status_map.get(reg.status, reg.status) }}</span></td>
+                        <td>
+                            {% if reg.andamentos %}
+                                {% for andamento in reg.andamentos %}
+                                    {% if andamento.texto %}<details><summary>{{ andamento.data }} - {{ andamento.tipo }}</summary><div class="publication-text">{{ andamento.texto }}</div></details>
+                                    {% else %}<div>{{ andamento.data }} - {{ andamento.tipo }}</div>{% endif %}
+                                {% endfor %}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if reg.documentos %}
+                                {% for doc in reg.documentos %}<div><a href="/downloads/{{ doc.caminho_relativo }}" download>{{ doc.nome_arquivo }}</a></div>{% endfor %}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if reg.status in ['Processado', 'Processado em Teste'] %}<form action="{{ url_for('arquivar', item_id=reg.id) }}" method="post" style="margin:0;"><button type="submit" class="action-button">Arquivar</button></form>
+                            {% elif reg.status == 'Arquivado' %}<form action="{{ url_for('desarquivar', item_id=reg.id) }}" method="post" style="margin:0;"><button type="submit" class="action-button">Desarquivar</button></form>{% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhuma notificação encontrada.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="pagination">
+                {% if paginas > 1 %}{% for p in range(1, paginas + 1) %}<a href="{{ url_for('index', page=p, **filtros) }}" class="{{ 'active' if p == pagina_atual else '' }}">{{ p }}</a>{% endfor %}{% endif %}
+            </div>
+        </div>
+
+        <div id="Logs" class="tab-content">
+            <h2>Histórico Completo de Execuções da RPA</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data e Hora</th><th>Duração</th><th>Notificações Novas</th>
+                        <th>Andamentos Capturados</th><th>Documentos Baixados</th>
+                        <th>Sucessos</th><th>Falhas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp }}</td>
+                        <td>{{ log.duracao_formatada }}</td>
+                        <td>{{ log.notificacoes_salvas }}</td>
+                        <td>{{ log.andamentos_capturados }}</td>
+                        <td>{{ log.documentos_baixados }}</td>
+                        <td style="color: #28a745;">{{ log.npjs_sucesso }}</td>
+                        <td style="color: #dc3545;">{{ log.npjs_falha }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum log de execução encontrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; }
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+</body>
+</html>
+"""
+
+# --- ROTAS FLASK ---
 @app.route('/')
 def index():
-    # ... (código existente sem alterações)
     status_map = {
-        "Pendente": "Novo",
-        "Processado": "Processado",
-        "Processado em Teste": "Obtido em Teste",
-        "Arquivado": "Arquivado",
-        "Erro": "Erro"
+        "Pendente": "Novo", "Processado": "Processado",
+        "Processado em Teste": "Obtido em Teste", "Arquivado": "Arquivado", "Erro": "Erro"
     }
-
     pagina_atual = request.args.get('page', 1, type=int)
     filtros = {
         'status': request.args.get('status', ''),
         'tipo_notificacao': request.args.get('tipo_notificacao', ''),
-        'ordenar_por': request.args.get('ordenar_por', 'data_criacao'),
     }
 
-    registros_processos = database.obter_notificacoes_paginadas(filtros, pagina_atual, ITENS_POR_PAGINA)
-    total_registros = database.contar_notificacoes(filtros)
-    tipos_notificacao = database.obter_tipos_notificacao_unicos()
-    logs_execucao = get_db_table_data(database.TABELA_LOGS)
+    # --- Lógica de Banco de Dados ---
+    conn = get_db_connection()
+    # Constrói a query de notificações com filtros
+    query_base = "SELECT * FROM notificacoes"
+    count_query = "SELECT COUNT(id) FROM notificacoes"
+    params = []
+    conditions = []
+    if filtros['status']:
+        conditions.append("status = ?")
+        params.append(filtros['status'])
+    if filtros['tipo_notificacao']:
+        conditions.append("tipo_notificacao = ?")
+        params.append(filtros['tipo_notificacao'])
+    if conditions:
+        where_clause = " WHERE " + " AND ".join(conditions)
+        query_base += where_clause
+        count_query += where_clause
+    query_base += " ORDER BY data_criacao DESC LIMIT ? OFFSET ?"
+    
+    total_items = conn.execute(count_query, params).fetchone()[0]
+    offset = (pagina_atual - 1) * ITENS_POR_PAGINA
+    registros = conn.execute(query_base, params + [ITENS_POR_PAGINA, offset]).fetchall()
+    tipos_notificacao = [row['tipo_notificacao'] for row in conn.execute("SELECT DISTINCT tipo_notificacao FROM notificacoes WHERE tipo_notificacao IS NOT NULL ORDER BY tipo_notificacao").fetchall()]
+    conn.close()
 
-    for reg in registros_processos:
+    # --- Processamento de Dados para o Template ---
+    registros_processados = []
+    for reg in registros:
+        reg_dict = dict(reg)
         for key in ['andamentos', 'documentos']:
-            if reg.get(key):
-                try: reg[key] = json.loads(reg[key])
-                except (json.JSONDecodeError, TypeError): reg[key] = []
-            else: reg[key] = []
+            try:
+                reg_dict[key] = json.loads(reg_dict[key]) if reg_dict[key] else []
+            except (json.JSONDecodeError, TypeError):
+                reg_dict[key] = []
+        registros_processados.append(reg_dict)
+    
+    paginas = (total_items + ITENS_POR_PAGINA - 1) // ITENS_POR_PAGINA
 
-    paginas = math.ceil(total_registros / ITENS_POR_PAGINA)
+    # --- Lógica de Logs ---
+    logs_execucao = get_db_table_data('logs_execucao')
+    # Processa a lista inteira de logs para formatação
+    for log in logs_execucao:
+        log['duracao_formatada'] = formatar_duracao(log.get('duracao_total'))
+        try:
+            log['npjs_sucesso'] = int(log.get('npjs_sucesso', 0) or 0)
+        except (ValueError, TypeError):
+            log['npjs_sucesso'] = 0
+        try:
+            falha_val = log.get('npjs_falha', 0)
+            log['npjs_falha'] = 1 if str(falha_val).lower() == 'crítico' else int(falha_val or 0)
+        except (ValueError, TypeError):
+            log['npjs_falha'] = 0
 
-    return render_template_string(HTML_TEMPLATE, 
-                                  registros=registros_processos, 
-                                  logs=logs_execucao,
+    return render_template_string(HTML_TEMPLATE,
+                                  registros=registros_processados,
                                   tipos_notificacao=tipos_notificacao,
                                   paginas=paginas,
                                   pagina_atual=pagina_atual,
                                   filtros=filtros,
-                                  status_map=status_map)
+                                  status_map=status_map,
+                                  logo=LOGO_BASE64,
+                                  logs=logs_execucao) # Passa a lista completa de logs
+
+@app.route('/update_status/<int:item_id>/<string:status>', methods=['POST'])
+def update_status(item_id, status):
+    """Rota genérica para arquivar/desarquivar."""
+    new_status = 'Arquivado' if status == 'arquivar' else 'Processado'
+    conn = get_db_connection()
+    conn.execute("UPDATE notificacoes SET status = ? WHERE id = ?", (new_status, item_id))
+    conn.commit()
+    conn.close()
+    return redirect(request.referrer or url_for('index'))
 
 @app.route('/arquivar/<int:item_id>', methods=['POST'])
 def arquivar(item_id):
-    # ... (código existente sem alterações)
-    database.arquivar_notificacao(item_id)
-    return redirect(url_for('index', **request.args))
+    return update_status(item_id, 'arquivar')
 
 @app.route('/desarquivar/<int:item_id>', methods=['POST'])
 def desarquivar(item_id):
-    """Rota para desarquivar uma notificação."""
-    database.desarquivar_notificacao(item_id)
-    # Mantém os filtros após a ação, passando os argumentos da requisição
-    return redirect(url_for('index', **request.args))
-
+    return update_status(item_id, 'desarquivar')
 
 @app.route('/downloads/<path:path>')
 def serve_download(path):
-    # ... (código existente sem alterações)
+    """Serve os arquivos da pasta de downloads."""
     return send_from_directory(DOWNLOADS_DIR, path, as_attachment=True)
 
 def abrir_navegador():
-    # ... (código existente sem alterações)
+    """Abre o navegador na URL do dashboard."""
     webbrowser.open_new("http://127.0.0.1:5000/")
 
 if __name__ == '__main__':
-    # ... (código existente sem alterações)
     if not os.path.exists(DOWNLOADS_DIR):
         os.makedirs(DOWNLOADS_DIR)
+    
+    init_db() # Garante que o DB e as tabelas existam ao iniciar
 
     print("="*50)
-    print("Servidor web para visualização dos resultados da RPA.")
+    print("Servidor web OneNotify iniciado.")
     print("Acesse em seu navegador: http://127.0.0.1:5000")
     print("Para parar o servidor, pressione CTRL+C no terminal.")
     print("="*50)
     Timer(1, abrir_navegador).start()
-    app.run(port=5000, debug=False)
+    app.run(port=5000, debug=False, use_reloader=False)
 

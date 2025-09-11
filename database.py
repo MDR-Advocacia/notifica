@@ -8,194 +8,69 @@ TABELA_NOTIFICACOES = "notificacoes_processos"
 TABELA_LOGS = "logs_execucao"
 
 def inicializar_banco():
-    # ... (código existente sem alterações)
+    """
+    Garante que o banco de dados e as tabelas necessárias existam,
+    realizando migrações de schema se necessário para adicionar colunas faltantes.
+    """
     conn = None
     try:
         conn = sqlite3.connect(DB_NOME)
         cursor = conn.cursor()
         
-        schema_notificacoes = f"""
+        # 1. Garante que a tabela de notificações exista com a estrutura base
+        cursor.execute(f"""
         CREATE TABLE IF NOT EXISTS {TABELA_NOTIFICACOES} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             NPJ TEXT NOT NULL,
             tipo_notificacao TEXT NOT NULL,
-            adverso_principal TEXT,
             data_notificacao TEXT NOT NULL,
-            andamentos TEXT,
-            documentos TEXT,
             status TEXT NOT NULL DEFAULT 'Pendente',
             data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-        """
-        cursor.execute(schema_notificacoes)
+        """)
 
-        schema_logs = f"""
+        # 2. Lógica de Migração de Schema: Adiciona colunas se estiverem faltando
+        cursor.execute(f"PRAGMA table_info({TABELA_NOTIFICACOES})")
+        colunas_existentes = [row[1] for row in cursor.fetchall()]
+        
+        colunas_desejadas = {
+            "adverso_principal": "TEXT",
+            "andamentos": "TEXT",
+            "documentos": "TEXT"
+        }
+
+        for coluna, tipo in colunas_desejadas.items():
+            if coluna not in colunas_existentes:
+                print(f"INFO: Migrando schema. Adicionando coluna '{coluna}'...")
+                cursor.execute(f"ALTER TABLE {TABELA_NOTIFICACOES} ADD COLUMN {coluna} {tipo}")
+        
+        # 3. Garante que a tabela de logs exista
+        cursor.execute(f"""
         CREATE TABLE IF NOT EXISTS {TABELA_LOGS} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
-            duracao_total TEXT,
-            tempo_medio_npj TEXT,
+            duracao_total REAL,
+            tempo_medio_npj REAL,
             notificacoes_salvas INTEGER,
             andamentos_capturados INTEGER,
             documentos_baixados INTEGER,
             npjs_sucesso INTEGER,
             npjs_falha TEXT
         )
-        """
-        cursor.execute(schema_logs)
+        """)
         
         conn.commit()
-        print(f"✅ Banco de dados '{DB_NOME}' e tabelas verificados/criados.")
+        print(f"✅ Banco de dados '{DB_NOME}' e tabelas verificados/migrados com sucesso.")
     except sqlite3.Error as e:
         print(f"❌ ERRO ao inicializar o banco de dados: {e}")
     finally:
         if conn:
             conn.close()
 
-def arquivar_notificacao(item_id: int):
-    """Atualiza o status de uma notificação específica para 'Arquivado'."""
-    # ... (código existente sem alterações)
-    conn = None
-    try:
-        conn = sqlite3.connect(DB_NOME)
-        cursor = conn.cursor()
-        query = f"UPDATE {TABELA_NOTIFICACOES} SET status = 'Arquivado' WHERE id = ?"
-        cursor.execute(query, (item_id,))
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"❌ ERRO ao arquivar notificação ID {item_id}: {e}")
-    finally:
-        if conn:
-            conn.close()
-
-def desarquivar_notificacao(item_id: int):
-    """Atualiza o status de uma notificação 'Arquivado' de volta para 'Processado'."""
-    conn = None
-    try:
-        conn = sqlite3.connect(DB_NOME)
-        cursor = conn.cursor()
-        # Volta para 'Processado' pois era o estado original antes de arquivar.
-        query = f"UPDATE {TABELA_NOTIFICACOES} SET status = 'Processado' WHERE id = ?"
-        cursor.execute(query, (item_id,))
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"❌ ERRO ao desarquivar notificação ID {item_id}: {e}")
-    finally:
-        if conn:
-            conn.close()
-
-# (O restante do arquivo database.py continua o mesmo)
-# ...
-def obter_notificacoes_paginadas(filtros: dict, pagina: int, por_pagina: int) -> list[dict]:
-    # ...
-    offset = (pagina - 1) * por_pagina
-    conn = None
-    try:
-        conn = sqlite3.connect(DB_NOME)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        base_query = f"SELECT * FROM {TABELA_NOTIFICACOES}"
-        where_clauses = []
-        params = []
-
-        if filtros.get("status"):
-            where_clauses.append("status = ?")
-            params.append(filtros["status"])
-        if filtros.get("tipo_notificacao"):
-            where_clauses.append("tipo_notificacao = ?")
-            params.append(filtros["tipo_notificacao"])
-
-        if where_clauses:
-            base_query += " WHERE " + " AND ".join(where_clauses)
-            
-        ordenar_por = filtros.get("ordenar_por", "data_criacao")
-        ordem = "ASC" if filtros.get("ordem") == "asc" else "DESC"
-        base_query += f" ORDER BY {ordenar_por} {ordem}"
-
-        base_query += " LIMIT ? OFFSET ?"
-        params.extend([por_pagina, offset])
-        
-        cursor.execute(base_query, params)
-        return [dict(row) for row in cursor.fetchall()]
-        
-    except sqlite3.Error as e:
-        print(f"❌ ERRO ao buscar notificações: {e}")
-        return []
-    finally:
-        if conn:
-            conn.close()
-
-def contar_notificacoes(filtros: dict) -> int:
-    # ...
-    conn = None
-    try:
-        conn = sqlite3.connect(DB_NOME)
-        cursor = conn.cursor()
-        
-        base_query = f"SELECT COUNT(id) FROM {TABELA_NOTIFICACOES}"
-        where_clauses = []
-        params = []
-
-        if filtros.get("status"):
-            where_clauses.append("status = ?")
-            params.append(filtros["status"])
-        if filtros.get("tipo_notificacao"):
-            where_clauses.append("tipo_notificacao = ?")
-            params.append(filtros["tipo_notificacao"])
-
-        if where_clauses:
-            base_query += " WHERE " + " AND ".join(where_clauses)
-
-        cursor.execute(base_query, params)
-        return cursor.fetchone()[0]
-
-    except sqlite3.Error as e:
-        print(f"❌ ERRO ao contar notificações: {e}")
-        return 0
-    finally:
-        if conn:
-            conn.close()
-
-def obter_tipos_notificacao_unicos() -> list[str]:
-    # ...
-    conn = None
-    try:
-        conn = sqlite3.connect(DB_NOME)
-        cursor = conn.cursor()
-        query = f"SELECT DISTINCT tipo_notificacao FROM {TABELA_NOTIFICACOES} ORDER BY tipo_notificacao"
-        cursor.execute(query)
-        return [row[0] for row in cursor.fetchall()]
-    except sqlite3.Error as e:
-        print(f"❌ ERRO ao buscar tipos de notificação: {e}")
-        return []
-    finally:
-        if conn:
-            conn.close()
-            
-def salvar_log_execucao(log_data: dict):
-    # ...
-    conn = None
-    try:
-        conn = sqlite3.connect(DB_NOME)
-        cursor = conn.cursor()
-        
-        colunas = ', '.join(log_data.keys())
-        placeholders = ', '.join(['?'] * len(log_data))
-        
-        query = f"INSERT INTO {TABELA_LOGS} ({colunas}) VALUES ({placeholders})"
-        
-        cursor.execute(query, list(log_data.values()))
-        conn.commit()
-        print("✅ Resumo da execução salvo no log.")
-    except sqlite3.Error as e:
-        print(f"❌ ERRO ao salvar log de execução no banco de dados: {e}")
-    finally:
-        if conn:
-            conn.close()
+# --- O RESTANTE DAS FUNÇÕES PERMANECE O MESMO ---
 
 def salvar_notificacoes(lista_notificacoes: list[dict]):
-    # ...
+    """Salva uma lista de novas notificações no banco de dados."""
     if not lista_notificacoes:
         return
     conn = None
@@ -226,7 +101,7 @@ def salvar_notificacoes(lista_notificacoes: list[dict]):
             conn.close()
 
 def obter_npjs_pendentes() -> list[dict]:
-    # ...
+    """Busca NPJs únicos que tenham notificações com status 'Pendente'."""
     conn = None
     try:
         conn = sqlite3.connect(DB_NOME)
@@ -251,7 +126,7 @@ def obter_npjs_pendentes() -> list[dict]:
             conn.close()
 
 def obter_npjs_para_teste(limite: int = 5) -> list[dict]:
-    # ...
+    """Busca os últimos NPJs processados para rodar em modo de teste."""
     conn = None
     try:
         conn = sqlite3.connect(DB_NOME)
@@ -279,7 +154,7 @@ def obter_npjs_para_teste(limite: int = 5) -> list[dict]:
             conn.close()
 
 def atualizar_registro_processado(npj: str, andamentos: list[dict], documentos: list[dict], is_test: bool = False):
-    # ...
+    """Atualiza todas as notificações de um NPJ com os dados processados."""
     conn = None
     try:
         conn = sqlite3.connect(DB_NOME)
@@ -287,31 +162,19 @@ def atualizar_registro_processado(npj: str, andamentos: list[dict], documentos: 
 
         andamentos_json = json.dumps(andamentos, ensure_ascii=False)
         documentos_json = json.dumps(documentos, ensure_ascii=False)
-        
         novo_status = "Processado em Teste" if is_test else "Processado"
         
+        # Define a cláusula WHERE baseada no modo de execução
         where_clause = "status = 'Pendente'"
-        if is_test:
-            where_clause = f"id IN (SELECT id FROM {TABELA_NOTIFICACOES} WHERE NPJ = ? ORDER BY data_criacao DESC LIMIT 1)"
+        params = (andamentos_json, documentos_json, novo_status, npj)
 
-        query = f"""
-        UPDATE {TABELA_NOTIFICACOES}
-        SET 
-            andamentos = ?,
-            documentos = ?,
-            status = ?
-        WHERE NPJ = ? AND ({where_clause})
-        """
+        if is_test:
+             # Em modo de teste, atualiza apenas a notificação mais recente do NPJ para não bagunçar o histórico
+             where_clause = f"id = (SELECT id FROM {TABELA_NOTIFICACOES} WHERE NPJ = ? ORDER BY data_criacao DESC LIMIT 1)"
+             params = (andamentos_json, documentos_json, novo_status, npj)
+
+        query = f"UPDATE {TABELA_NOTIFICACOES} SET andamentos = ?, documentos = ?, status = ? WHERE NPJ = ? AND {where_clause}"
         
-        params = (
-            andamentos_json,
-            documentos_json,
-            novo_status,
-            npj
-        )
-        if is_test:
-            params += (npj,)
-
         cursor.execute(query, params)
         conn.commit()
         print(f"    - ✅ Registros do NPJ {npj} atualizados para '{novo_status}'.")
@@ -322,8 +185,9 @@ def atualizar_registro_processado(npj: str, andamentos: list[dict], documentos: 
         if conn:
             conn.close()
 
+
 def marcar_como_erro(npj: str):
-    # ...
+    """Marca todas as notificações pendentes de um NPJ como 'Erro'."""
     conn = None
     try:
         conn = sqlite3.connect(DB_NOME)
@@ -334,6 +198,81 @@ def marcar_como_erro(npj: str):
         print(f"    - ⚠️ Registros do NPJ {npj} marcados como 'Erro'.")
     except sqlite3.Error as e:
         print(f"❌ ERRO ao marcar NPJ {npj} como erro: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def salvar_log_execucao(log_data: dict):
+    """Salva um registro de log no banco de dados."""
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_NOME)
+        cursor = conn.cursor()
+        colunas = ', '.join(log_data.keys())
+        placeholders = ', '.join(['?'] * len(log_data))
+        query = f"INSERT INTO {TABELA_LOGS} ({colunas}) VALUES ({placeholders})"
+        cursor.execute(query, list(log_data.values()))
+        conn.commit()
+        print("✅ Resumo da execução salvo no log.")
+    except sqlite3.Error as e:
+        print(f"❌ ERRO ao salvar log de execução: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def arquivar_notificacao_por_npj(npj: str):
+    """Atualiza todas as notificações de um NPJ para 'Arquivado'."""
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_NOME)
+        cursor = conn.cursor()
+        query = f"UPDATE {TABELA_NOTIFICACOES} SET status = 'Arquivado' WHERE NPJ = ? AND status IN ('Processado', 'Processado em Teste')"
+        cursor.execute(query, (npj,))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"❌ ERRO ao arquivar notificações para o NPJ {npj}: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def desarquivar_notificacao_por_npj(npj: str):
+    """Atualiza todas as notificações arquivadas de um NPJ de volta para 'Processado'."""
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_NOME)
+        cursor = conn.cursor()
+        query = f"UPDATE {TABELA_NOTIFICACOES} SET status = 'Processado' WHERE NPJ = ? AND status = 'Arquivado'"
+        cursor.execute(query, (npj,))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"❌ ERRO ao desarquivar notificações para o NPJ {npj}: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def arquivar_notificacoes_em_lote_por_npj(lista_npjs: list[str]):
+    """Atualiza o status de uma lista de NPJs para 'Arquivado'."""
+    if not lista_npjs:
+        return 0
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_NOME)
+        cursor = conn.cursor()
+        placeholders = ', '.join(['?'] * len(lista_npjs))
+        query = f"""
+        UPDATE {TABELA_NOTIFICACOES}
+        SET status = 'Arquivado'
+        WHERE NPJ IN ({placeholders})
+        AND status IN ('Processado', 'Processado em Teste')
+        """
+        cursor.execute(query, lista_npjs)
+        conn.commit()
+        registros_afetados = cursor.rowcount
+        print(f"✅ {registros_afetados} notificações (de {len(lista_npjs)} NPJs) arquivadas em lote.")
+        return registros_afetados
+    except sqlite3.Error as e:
+        print(f"❌ ERRO ao arquivar notificações em lote por NPJ: {e}")
+        return 0
     finally:
         if conn:
             conn.close()

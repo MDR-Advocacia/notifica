@@ -67,8 +67,6 @@ def inicializar_banco():
         if conn:
             conn.close()
 
-# --- O RESTANTE DAS FUNÇÕES PERMANECE O MESMO ---
-
 def salvar_notificacoes(lista_notificacoes: list[dict]):
     """Salva uma lista de novas notificações no banco de dados."""
     if not lista_notificacoes:
@@ -164,14 +162,13 @@ def atualizar_registro_processado(npj: str, andamentos: list[dict], documentos: 
         documentos_json = json.dumps(documentos, ensure_ascii=False)
         novo_status = "Processado em Teste" if is_test else "Processado"
         
-        # Define a cláusula WHERE baseada no modo de execução
-        where_clause = "status = 'Pendente'"
         params = (andamentos_json, documentos_json, novo_status, npj)
 
         if is_test:
-             # Em modo de teste, atualiza apenas a notificação mais recente do NPJ para não bagunçar o histórico
-             where_clause = f"id = (SELECT id FROM {TABELA_NOTIFICACOES} WHERE NPJ = ? ORDER BY data_criacao DESC LIMIT 1)"
-             params = (andamentos_json, documentos_json, novo_status, npj)
+             where_clause = f"id = (SELECT id FROM {TABELA_NOTIFICACOES} WHERE NPJ = ? AND status IN ('Processado', 'Processado em Teste') ORDER BY data_criacao DESC LIMIT 1)"
+             params = (andamentos_json, documentos_json, novo_status, npj, npj) # NPJ is used twice here
+        else:
+             where_clause = "status = 'Pendente'"
 
         query = f"UPDATE {TABELA_NOTIFICACOES} SET andamentos = ?, documentos = ?, status = ? WHERE NPJ = ? AND {where_clause}"
         

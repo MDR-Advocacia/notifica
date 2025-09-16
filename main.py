@@ -31,6 +31,7 @@ def main():
     with sync_playwright() as playwright:
         try:
             browser, context, browser_process = realizar_login_automatico(playwright)
+            time.sleep(60)
             page = context.new_page()
             
             page.goto("https://juridico.bb.com.br/paj/juridico")
